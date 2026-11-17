@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ميقات - إشعار سطح المكتب</title>
+    <!-- Tailwind CSS (Offline-first / Fallback) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Cairo & Amiri -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+        }
+
+        .font-amiri {
+            font-family: 'Amiri', serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 8px;
+            background: transparent;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+        }
+
+        /* Glassmorphism Acrylic Card */
+        .glass-popup-card {
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7),
+                        0 0 20px rgba(16, 185, 129, 0.2);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: slideUpIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUpIn {
+            0% {
+                opacity: 0;
+                transform: translateY(24px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes slideDownOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+        }
+
+        .animate-out {
+            animation: slideDownOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+        }
+
+        /* Equalizer Animation Bars */
+        .eq-bar {
+            width: 3.5px;
+            border-radius: 9999px;
+            animation: eqBounce 1.2s ease-in-out infinite alternate;
+        }
+
+        .eq-bar:nth-child(1) { height: 16px; animation-delay: 0.1s; }
+        .eq-bar:nth-child(2) { height: 26px; animation-delay: 0.35s; }
+        .eq-bar:nth-child(3) { height: 12px; animation-delay: 0.2s; }
+        .eq-bar:nth-child(4) { height: 22px; animation-delay: 0.5s; }
+        .eq-bar:nth-child(5) { height: 18px; animation-delay: 0.15s; }
+
+        @keyframes eqBounce {
+            0% { height: 6px; opacity: 0.4; }
+            100% { height: 28px; opacity: 1; }
+        }
+
+        /* Pulse Ring Effect for Prayer */
+        .pulse-ring {
+            animation: pulseWave 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+        }
+
+        @keyframes pulseWave {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.08); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body class="p-2">
+
+    <!-- Main Popup Window Container -->
+    <div id="popupCard" class="glass-popup-card w-full h-full rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 text-white flex flex-col justify-between overflow-hidden relative border border-emerald-500/30">
+        
+        <!-- Header: Drag Handle, Badge, Current Clock, Dismiss Button -->
+        <div data-tauri-drag-region class="flex items-center justify-between pb-2 mb-1.5 border-b border-white/10 cursor-move">
+            <div class="flex items-center gap-2 pointer-events-none">
+                <img src="app-icon.png" alt="ميقات" class="w-4 h-4 object-contain filter drop-shadow">
+                <span id="popupBadge" class="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    أذان الصلاة
+                </span>
+                <span id="popupTimeClock" class="text-xs font-mono font-bold text-slate-300">
+                    --:--
+                </span>
+            </div>
+
+            <div class="flex items-center gap-1">
+                <!-- Open Main App Button -->
+                <button onclick="handleAction('open_app')" title="فتح برنامج ميقات الرئيسي" class="w-7 h-7 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs transition">
+                    <i class="fa-solid fa-up-right-from-square"></i>
+                </button>
+                <!-- Dismiss / Close Popup -->
+                <button onclick="dismissPopup()" title="إغلاق التنبيه" class="w-7 h-7 rounded-xl bg-white/10 hover:bg-rose-500/30 text-slate-300 hover:text-rose-400 flex items-center justify-center text-xs transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Notification Body Content -->
+        <div id="popupBody" class="flex-1 flex flex-col justify-center space-y-2 py-1">
+            <!-- Rendered Dynamically -->
+        </div>
+
+        <!-- Action Buttons Footer -->
+        <div id="popupActions" class="pt-2 pb-0.5 mt-1 border-t border-white/10 flex items-center gap-2">
+            <!-- Action buttons injected dynamically -->
+        </div>
+
+        <!-- Optional Auto-Dismiss Progress Bar -->
+        <div id="dismissProgressTrack" class="absolute bottom-0 left-0 right-0 h-1 bg-white/10 hidden overflow-hidden rounded-b-2xl sm:rounded-b-3xl">
+            <div id="dismissProgressBar" class="h-full bg-emerald-400 transition-all duration-100 w-full"></div>
+        </div>
+    </div>
+
+    <!-- Quick Audio Element for standalone playback if needed -->
+    <audio id="popupAudioPlayer" class="hidden"></audio>
+
+    <script>
+        let currentNotification = null;
+        let dismissTimer = null;
+        let progressInterval = null;
+        let durationSeconds = 30;
+        let secondsRemaining = 30;
+
+        // Sound State
+        let isAudioPlaying = true;
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Try reading active notification from localStorage
+            try {
+                const stored = localStorage.getItem('miqat_active_notification');
+                if (stored) {
+                    renderNotification(JSON.parse(stored));
+                }
+            } catch (e) {}
+
+            // 2. Listen to storage events from main window
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'miqat_active_notification' && e.newValue) {
+                    try {
+                        renderNotification(JSON.parse(e.newValue));
+                    } catch(err) {}
+                } else if (e.key === 'miqat_audio_status' && e.newValue) {
+                    try {
+                        const status = JSON.parse(e.newValue);
+                        updateAudioUI(status.isPlaying);
+                    } catch(err) {}
+                }
+            });
+
+            // Start live clock in header
+            setInterval(updateHeaderClock, 1000);
+            updateHeaderClock();
+        });
+
+        function updateHeaderClock() {
+            const now = new Date();
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const ampm = h >= 12 ? 'م' : 'ص';
+            h = h % 12 || 12;
+            const clockEl = document.getElementById('popupTimeClock');
+            if (clockEl) clockEl.textContent = `${h}:${m} ${ampm}`;
+        }
+
+        // Global function called by Tauri backend via win.eval()
+        window.renderNotification = function(data) {
+            if (!data) return;
+            currentNotification = data;
+            isAudioPlaying = true;
+
+            const card = document.getElementById('popupCard');
+            const badge = document.getElementById('popupBadge');
+            const body = document.getElementById('popupBody');
+            const actions = document.getElementById('popupActions');
+            const track = document.getElementById('dismissProgressTrack');
+            const pBar = document.getElementById('dismissProgressBar');
+
+            card.classList.remove('animate-out');
+
+            // Theme colors and styling based on notification type
+            const type = data.type || (data.soundType === 'adhan' ? 'adhan' : 'alarm');
+
+            if (type === 'adhan') {
+                card.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                card.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(16, 185, 129, 0.25)';
+                badge.className = 'text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                badge.innerHTML = `<i class="fa-solid fa-kaaba ml-1"></i> ${data.badge || 'أذان الصلاة'}`;
+
+                // Adhan Content
+                const duaaSnippet = data.duaaSnippet || 'اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ، وَالصَّلَاةِ القَائِمَةِ، آتِ سَيِّدَنَا مُحَمَّداً الوَسِيلَةَ وَالفَضِيلَةَ...';
+                
+                body.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <!-- Mosque Icon with Pulsing Halo -->
+                        <div class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-teal-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-lg">
+                            <i class="fa-solid fa-mosque text-xl text-emerald-400 pulse-ring"></i>
+                        </div>
+
+                        <!-- Prayer Info & Equalizer -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-base sm:text-lg font-black text-white font-amiri tracking-wide truncate">
+                                    ${data.title || 'حان الآن موعد الأذان'}
+                                </h3>
+                                <!-- Sound Visualizer Equalizer -->
+                                <div id="popupEqualizer" class="flex items-end gap-1 px-2 py-1 rounded-lg bg-black/30">
+                                    <div class="eq-bar bg-emerald-400"></div>
+                                    <div class="eq-bar bg-amber-400"></div>
+                                    <div class="eq-bar bg-emerald-400"></div>
+                                    <div class="eq-bar bg-teal-400"></div>
+                                    <div class="eq-bar bg-emerald-400"></div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-300 font-semibold truncate mt-0.5">
+                                ${data.subtitle || 'حسب التوقيت المحلي لمدينتك'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Post Prayer Duaa Teaser -->
+                    <div class="py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-emerald-300/90 leading-relaxed font-amiri text-center shadow-inner">
+                        <i class="fa-solid fa-hands-praying ml-1 text-emerald-400"></i>
+                        <span>${duaaSnippet}</span>
+                    </div>
+                `;
+
+                // Action Buttons for Adhan
+                actions.innerHTML = `
+                    <!-- Stop Adhan Audio -->
+                    <button id="btnStopAudio" onclick="handleAction('stop_audio')" class="flex-1 py-2 px-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm">
+                        <i class="fa-solid fa-volume-xmark"></i>
+                        <span id="btnStopAudioText">إيقاف الأذان</span>
+                    </button>
+
+                    <!-- Play Post-Adhan Duaa -->
+                    <button onclick="handleAction('play_duaa')" class="flex-1 py-2 px-2.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-500/40 text-emerald-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm">
+                        <i class="fa-solid fa-hands-praying"></i>
+                        <span>دعاء الأذان</span>
+                    </button>
+
+                    <!-- Dismiss -->
+                    <button onclick="dismissPopup()" class="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white text-xs font-bold transition active:scale-95">
+                        تم
+                    </button>
+                `;
+
+            } else if (type === 'alarm') {
+                card.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                card.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.25)';
+                badge.className = 'text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30';
+                badge.innerHTML = `<i class="fa-solid fa-briefcase ml-1"></i> ${data.badge || 'منبه العمل والاستراحة'}`;
+
+                body.innerHTML = `
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-13 h-13 p-3 rounded-2xl bg-gradient-to-br from-sky-500/30 to-blue-500/20 border border-sky-500/40 flex items-center justify-center shrink-0 shadow-lg">
+                            <i class="fa-solid ${data.icon || 'fa-bell'} text-2xl text-sky-400 pulse-ring"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-base font-extrabold text-white truncate">
+                                ${data.title || 'حان موعد التنبيه'}
+                            </h3>
+                            <p class="text-xs text-slate-300 font-medium truncate mt-0.5">
+                                ${data.subtitle || 'منبه مجدول للعمل أو الاستراحة'}
+                            </p>
+                            <span class="inline-block mt-1 text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg bg-black/40 text-sky-300">
+                                <i class="fa-regular fa-clock ml-1"></i> ${data.time || ''}
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                // Action Buttons for Work Alarm: Stop, Snooze 5m, Snooze 10m, Dismiss
+                actions.innerHTML = `
+                    <button id="btnStopAudio" onclick="handleAction('stop_audio')" class="flex-1 py-2 px-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95">
+                        <i class="fa-solid fa-volume-xmark"></i>
+                        <span id="btnStopAudioText">إيقاف التنبيه</span>
+                    </button>
+
+                    <button onclick="handleAction('snooze', 5)" class="py-2 px-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1 transition active:scale-95">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>غفوة 5د</span>
+                    </button>
+
+                    <button onclick="handleAction('snooze', 10)" class="py-2 px-2.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1 transition active:scale-95">
+                        <i class="fa-solid fa-forward"></i>
+                        <span>غفوة 10د</span>
+                    </button>
+
+                    <button onclick="dismissPopup()" class="py-2 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white text-xs font-bold transition active:scale-95">
+                        تم
+                    </button>
+                `;
+
+            } else {
+                // General or Pre-Prayer Reminder
+                card.style.borderColor = 'rgba(251, 191, 36, 0.4)';
+                card.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(251, 191, 36, 0.25)';
+                badge.className = 'text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                badge.innerHTML = `<i class="fa-solid fa-bell ml-1"></i> ${data.badge || 'تنبيه تحضيري للصلاة'}`;
+
+                body.innerHTML = `
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/30 to-orange-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-lg">
+                            <i class="fa-solid ${data.icon || 'fa-bell'} text-xl text-amber-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-base font-extrabold text-white truncate">
+                                ${data.title || 'اقترب موعد الصلاة'}
+                            </h3>
+                            <p class="text-xs text-slate-300 font-medium truncate mt-0.5">
+                                ${data.subtitle || 'استعد للوضوء وأداء الفريضة'}
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+                actions.innerHTML = `
+                    <button onclick="dismissPopup()" class="flex-1 py-2 px-3 rounded-xl bg-amber-500/25 hover:bg-amber-500/35 border border-amber-500/40 text-amber-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm">
+                        <i class="fa-solid fa-check"></i>
+                        <span>حسناً، استعد للصلاة</span>
+                    </button>
+
+                    <button onclick="handleAction('open_app')" class="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white text-xs font-bold transition active:scale-95 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        <span>فتح ميقات</span>
+                    </button>
+                `;
+            }
+
+            // Setup Auto-Dismiss Timer
+            setupAutoDismiss(data.duration !== undefined ? data.duration : 30);
+        };
+
+        function setupAutoDismiss(durationSec) {
+            clearInterval(progressInterval);
+            clearTimeout(dismissTimer);
+
+            const track = document.getElementById('dismissProgressTrack');
+            const pBar = document.getElementById('dismissProgressBar');
+
+            if (!durationSec || durationSec <= 0) {
+                if (track) track.classList.add('hidden');
+                return; // Stays open until dismissed
+            }
+
+            if (track) track.classList.remove('hidden');
+            durationSeconds = durationSec;
+            secondsRemaining = durationSec;
+
+            const startTime = Date.now();
+            const totalMs = durationSec * 1000;
+
+            progressInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, totalMs - elapsed);
+                const pct = (remaining / totalMs) * 100;
+                if (pBar) pBar.style.width = `${pct}%`;
+
+                if (remaining <= 0) {
+                    clearInterval(progressInterval);
+                    dismissPopup();
+                }
+            }, 100);
+        }
+
+        function updateAudioUI(playing) {
+            isAudioPlaying = playing;
+            const eq = document.getElementById('popupEqualizer');
+            const btnStop = document.getElementById('btnStopAudio');
+            const stopText = document.getElementById('btnStopAudioText');
+
+            if (eq) {
+                eq.style.opacity = playing ? '1' : '0.2';
+            }
+            if (btnStop && stopText) {
+                if (!playing) {
+                    btnStop.classList.remove('bg-rose-500/20', 'text-rose-300', 'border-rose-500/30');
+                    btnStop.classList.add('bg-slate-700/50', 'text-slate-400', 'border-white/10');
+                    stopText.textContent = 'تم الإيقاف 🔇';
+                }
+            }
+        }
+
+        async function handleAction(action, data) {
+            // 1. Send action to main window via localStorage
+            try {
+                localStorage.setItem('miqat_popup_action', JSON.stringify({
+                    action: action,
+                    data: data || null,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {}
+
+            // 2. Immediate feedback in popup
+            if (action === 'stop_audio') {
+                updateAudioUI(false);
+            } else if (action === 'snooze') {
+                const body = document.getElementById('popupBody');
+                if (body) {
+                    body.innerHTML = `
+                        <div class="p-3 text-center text-amber-300 font-bold text-sm bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                            <i class="fa-solid fa-clock-rotate-left mb-1 block text-lg"></i>
+                            تم تأجيل المنبه (${data} دقائق) بنجاح ⏳
+                        </div>
+                    `;
+                }
+                setTimeout(dismissPopup, 1200);
+                return;
+            } else if (action === 'play_duaa') {
+                const body = document.getElementById('popupBody');
+                if (body) {
+                    const duaaCard = body.querySelector('.font-amiri');
+                    if (duaaCard) {
+                        duaaCard.classList.add('bg-emerald-500/20', 'border-emerald-500/50');
+                    }
+                }
+            } else if (action === 'open_app') {
+                if (window.__TAURI__?.core?.invoke) {
+                    try { await window.__TAURI__.core.invoke('show_main_window'); } catch(e) {}
+                }
+                dismissPopup();
+                return;
+            }
+        }
+
+        async function dismissPopup() {
+            clearInterval(progressInterval);
+            clearTimeout(dismissTimer);
+
+            const card = document.getElementById('popupCard');
+            if (card) {
+                card.classList.add('animate-out');
+            }
+
+            setTimeout(async () => {
+                if (window.__TAURI__?.core?.invoke) {
+                    try {
+                        await window.__TAURI__.core.invoke('hide_popup_notification');
+                    } catch(e) {}
+                } else if (window.__TAURI__?.window?.getCurrentWindow) {
+                    try {
+                        window.__TAURI__.window.getCurrentWindow().hide();
+                    } catch(e) {}
+                }
+            }, 240);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ميقات - ودجت سطح المكتب الذكي</title>
+    <!-- App Favicon -->
+    <link rel="icon" type="image/png" href="app-icon.png">
+    <link rel="apple-touch-icon" href="app-icon.png">
+    <!-- Local Offline Fonts (Cairo & Amiri) -->
+    <link rel="stylesheet" href="assets/css/fonts.css">
+    <!-- Local Offline Font Awesome 6 Icons -->
+    <link rel="stylesheet" href="assets/css/fontawesome.min.css">
+    <!-- Local Offline Tailwind CSS Engine -->
+    <script src="assets/js/tailwind.min.js"></script>
+
+    <style>
+        html, body {
+            background: transparent !important;
+            margin: 0;
+            padding: 0;
+            overflow: visible;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Cairo', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* High legibility drop shadow for text against any desktop wallpaper */
+        .desktop-glow-text {
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.95);
+        }
+
+        /* Smooth pop animation for the right click context menu */
+        @keyframes menuFadeScale {
+            from {
+                opacity: 0;
+                transform: scale(0.92);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .menu-pop {
+            animation: menuFadeScale 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform-origin: top right;
+        }
+
+        /* Custom scrollbar for context menu if needed */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="relative">
+
+    <!-- Widget Root Card Container (Native Tauri Drag Region + Pointer Fallback) -->
+    <div id="widgetCard" data-tauri-drag-region class="relative rounded-3xl transition-all duration-200 p-3 select-none cursor-move">
+        <!-- Dynamic Body Content -->
+        <div id="widgetBody" class="w-full flex items-center justify-center">
+            <div class="text-center py-4 text-xs text-white/70">جاري تحميل بيانات الودجت...</div>
+        </div>
+    </div>
+
+    <!-- Right-Click Professional Context Menu (Appears at cursor position on right-click) -->
+    <div id="widgetContextMenu" class="fixed z-50 hidden rounded-2xl bg-slate-900/95 text-white backdrop-blur-2xl border border-white/20 p-2.5 shadow-2xl text-xs w-72 select-none menu-pop max-h-[92vh] overflow-y-auto">
+        
+        <!-- Context Menu Header -->
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/10 px-2 font-bold text-slate-200">
+            <div class="flex items-center gap-2">
+                <img src="app-icon.png" alt="ميقات" class="w-4 h-4 object-contain">
+                <span id="cmWidgetTitle" class="truncate font-extrabold text-[11px]">إعدادات الودجت</span>
+            </div>
+            <button onclick="closeContextMenu()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+
+        <div class="space-y-1.5 text-xs">
+            <!-- 1. Lock / Unlock Position -->
+            <button onclick="toggleLock(); closeContextMenu();" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-white/10 transition text-right">
+                <span class="flex items-center gap-2">
+                    <i id="cmLockIcon" class="fa-solid fa-lock-open text-amber-400 w-4 text-center"></i>
+                    <span id="cmLockText">تثبيت الموضع (قفل السحب)</span>
+                </span>
+                <span id="cmLockBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">حر</span>
+            </button>
+
+            <!-- 2. Opacity Control (Transparency) -->
+            <div class="px-2.5 py-1.5 rounded-xl hover:bg-white/5 transition space-y-1">
+                <div class="flex items-center justify-between text-[11px] font-bold">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-half-stroke text-emerald-400 w-4 text-center"></i>
+                        <span>الشفافية</span>
+                    </span>
+                    <span id="cmOpacityVal" class="text-emerald-400 font-mono font-bold">80%</span>
+                </div>
+                <div class="flex items-center gap-1 pt-1">
+                    <button onclick="setContextMenuOpacity(0)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-slate-950 transition">0%</button>
+                    <button onclick="setContextMenuOpacity(30)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-slate-950 transition">30%</button>
+                    <button onclick="setContextMenuOpacity(60)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-slate-950 transition">60%</button>
+                    <button onclick="setContextMenuOpacity(85)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-slate-950 transition">85%</button>
+                    <button onclick="setContextMenuOpacity(100)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-slate-950 transition">100%</button>
+                </div>
+            </div>
+
+            <!-- 3. Scale / Size Control -->
+            <div class="px-2.5 py-1.5 rounded-xl hover:bg-white/5 transition space-y-1">
+                <div class="flex items-center justify-between text-[11px] font-bold">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center text-blue-400 w-4 text-center"></i>
+                        <span>الحجم والتكبير</span>
+                    </span>
+                    <span id="cmScaleVal" class="text-blue-400 font-mono font-bold">100%</span>
+                </div>
+                <div class="flex items-center gap-1 pt-1">
+                    <button onclick="setContextMenuScale(75)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-blue-500 hover:text-slate-950 transition">75%</button>
+                    <button onclick="setContextMenuScale(100)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-blue-500 hover:text-slate-950 transition">100%</button>
+                    <button onclick="setContextMenuScale(120)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-blue-500 hover:text-slate-950 transition">120%</button>
+                    <button onclick="setContextMenuScale(140)" class="flex-1 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-blue-500 hover:text-slate-950 transition">140%</button>
+                </div>
+            </div>
+
+            <!-- 4. Border Frame Toggle (Disappears completely when unchecked) -->
+            <button onclick="toggleContextMenuBorder()" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-white/10 transition text-right">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-border-all text-purple-400 w-4 text-center"></i>
+                    <span>إظهار الإطار الخارجي</span>
+                </span>
+                <span id="cmBorderBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">مفعل</span>
+            </button>
+
+            <!-- 5. Glass Blur Toggle -->
+            <button onclick="toggleContextMenuBlur()" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-white/10 transition text-right">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-teal-400 w-4 text-center"></i>
+                    <span>تأثير زجاجي ضبابي</span>
+                </span>
+                <span id="cmBlurBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">مفعل</span>
+            </button>
+
+            <!-- 6. Always on Top / Desktop Background Toggle -->
+            <button onclick="toggleContextMenuAlwaysOnTop()" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-white/10 transition text-right">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-sky-400 w-4 text-center"></i>
+                    <span>مستوى العرض (Z-Order)</span>
+                </span>
+                <span id="cmZOrderBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">سطح المكتب (بالخلفية)</span>
+            </button>
+
+            <!-- 6. Date Controls (For Analog and Digital Clocks) -->
+            <div id="cmDateSection" class="hidden pt-1.5 border-t border-white/10 space-y-1">
+                <div class="px-2 text-[10px] text-emerald-400 font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    <span>إعدادات التاريخ أسفل الساعة:</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1 px-1">
+                    <button onclick="toggleContextMenuHijri()" class="py-1 px-1.5 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-slate-950 transition text-center flex items-center justify-between">
+                        <span>الهجري</span>
+                        <span id="cmHijriBadge" class="text-[9px] px-1 rounded bg-white/10">مفعل</span>
+                    </button>
+                    <button onclick="toggleContextMenuGregorian()" class="py-1 px-1.5 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-slate-950 transition text-center flex items-center justify-between">
+                        <span>الميلادي</span>
+                        <span id="cmGregorianBadge" class="text-[9px] px-1 rounded bg-white/10">مفعل</span>
+                    </button>
+                </div>
+                <button onclick="toggleContextMenuDateFormat()" class="w-full flex items-center justify-between px-2.5 py-1 rounded-xl hover:bg-white/10 transition text-right mt-1">
+                    <span class="flex items-center gap-2 text-[11px]">
+                        <i class="fa-solid fa-spell-check text-sky-400 w-4 text-center"></i>
+                        <span>صيغة عرض التاريخ</span>
+                    </span>
+                    <span id="cmDateFormatBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">أسماء الشهور</span>
+                </button>
+            </div>
+
+            <!-- 7. Exclusive Settings for Analog Clock -->
+            <div id="cmAnalogClockSection" class="hidden pt-1.5 border-t border-white/10 space-y-1.5">
+                <div class="px-2 text-[10px] text-amber-400 font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>تصميم الساعة التناظرية:</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1 px-1">
+                    <button onclick="setContextMenuClockStyle('classic')" class="py-1 px-1.5 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-amber-500 hover:text-slate-950 transition text-center">👑 ملكي ذهبي</button>
+                    <button onclick="setContextMenuClockStyle('arabesque')" class="py-1 px-1.5 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-amber-500 hover:text-slate-950 transition text-center">🕌 أرابيسك إسلامي</button>
+                    <button onclick="setContextMenuClockStyle('arabic')" class="py-1 px-1.5 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-amber-500 hover:text-slate-950 transition text-center">✨ أرقام مشرقية</button>
+                    <button onclick="setContextMenuClockStyle('modern')" class="py-1 px-1.5 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-amber-500 hover:text-slate-950 transition text-center">⚡ عصري داكن</button>
+                </div>
+                <button onclick="toggleContextMenuSweep()" class="w-full flex items-center justify-between px-2.5 py-1 rounded-xl hover:bg-white/10 transition text-right mt-1">
+                    <span class="flex items-center gap-2 text-[11px]">
+                        <i class="fa-solid fa-wave-square text-amber-400 w-4 text-center"></i>
+                        <span>حركة عقرب الثواني</span>
+                    </span>
+                    <span id="cmSweepBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">انسيابي</span>
+                </button>
+            </div>
+
+            <!-- Global Actions -->
+            <div class="pt-2 border-t border-white/10 space-y-1">
+                <button onclick="openMainWindow(); closeContextMenu();" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-emerald-500/20 text-emerald-300 hover:text-emerald-200 transition text-right font-bold">
+                    <i class="fa-solid fa-sliders w-4 text-center"></i>
+                    <span>فتح استوديو الإعدادات والمعاينة الحية</span>
+                </button>
+                <button onclick="closeWidget()" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 transition text-right font-bold">
+                    <i class="fa-solid fa-xmark w-4 text-center"></i>
+                    <span>إخفاء هذا الودجت</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'smart_prayer_work_app_v1';
+        let appState = null;
+        let widgetId = 'clock';
+
+        const DEFAULT_PRAYER_TIMINGS = {
+            Fajr: '04:47',
+            Sunrise: '06:18',
+            Dhuhr: '11:36',
+            Asr: '14:34',
+            Maghrib: '16:53',
+            Isha: '18:14'
+        };
+
+        const DEFAULT_WIDGET_STATE = {
+            city: 'الإسماعيلية',
+            country: 'مصر',
+            hijriDate: '6 جمادى الآخرة 1448 هـ',
+            prayerTimings: { ...DEFAULT_PRAYER_TIMINGS },
+            prayerSettings: {
+                Fajr: { offset: 0 },
+                Sunrise: { offset: 0 },
+                Dhuhr: { offset: 0 },
+                Asr: { offset: 0 },
+                Maghrib: { offset: 0 },
+                Isha: { offset: 0 }
+            },
+            workAlarms: [
+                { id: 'work_start', title: 'بداية العمل والدوام', time: '08:00', enabled: true },
+                { id: 'lunch_break', title: 'استراحة الغداء وتجديد النشاط', time: '13:00', enabled: true },
+                { id: 'work_end', title: 'انتهاء العمل والانصراف', time: '16:00', enabled: true }
+            ],
+            desktopWidgets: {
+                analogClock: {
+                    id: 'analogClock',
+                    name: 'الساعة التناظرية الفاخرة',
+                    clockStyle: 'classic',
+                    smoothSweep: true,
+                    enabled: false,
+                    locked: false,
+                    bgColor: '#09131f',
+                    bgOpacity: 85,
+                    textColor: '#ffffff',
+                    accentColor: '#10b981',
+                    blur: true,
+                    border: true,
+                    scale: 100,
+                    padding: 12,
+                    showHijri: true,
+                    showGregorian: true,
+                    showDayName: true,
+                    dateFormat: 'text',
+                    hijriFormat: 'text',
+                    gregorianFormat: 'text',
+                    hijriFontSize: 11,
+                    gregorianFontSize: 10,
+                    dayFontSize: 12,
+                    hijriColor: '#34d399',
+                    gregorianColor: '#94a3b8',
+                    dayColor: '#fbbf24',
+                    clockColor: '#ffffff'
+                },
+                clock: {
+                    id: 'clock',
+                    name: 'الساعة الرقمية والتاريخ',
+                    enabled: false,
+                    locked: false,
+                    bgColor: '#09131f',
+                    bgOpacity: 85,
+                    textColor: '#ffffff',
+                    accentColor: '#10b981',
+                    blur: true,
+                    border: true,
+                    scale: 100,
+                    padding: 12,
+                    showClock: true,
+                    showHijri: true,
+                    showGregorian: true,
+                    showDayName: true,
+                    dateFormat: 'text',
+                    hijriFormat: 'text',
+                    gregorianFormat: 'text',
+                    clockFontSize: 48,
+                    dayFontSize: 12,
+                    hijriFontSize: 11,
+                    gregorianFontSize: 10,
+                    clockColor: '#ffffff',
+                    dayColor: '#fbbf24',
+                    hijriColor: '#34d399',
+                    gregorianColor: '#94a3b8'
+                },
+                nextPrayer: {
+                    id: 'nextPrayer',
+                    name: 'الصلاة القادمة والعد التنازلي',
+                    enabled: false,
+                    locked: false,
+                    bgColor: '#09131f',
+                    bgOpacity: 85,
+                    textColor: '#ffffff',
+                    accentColor: '#10b981',
+                    blur: true,
+                    border: true,
+                    scale: 100,
+                    padding: 12,
+                    showPrayerTitle: true,
+                    showPrayerCountdown: true,
+                    showPrayerTime: true
+                },
+                workAlarm: {
+                    id: 'workAlarm',
+                    name: 'منبه العمل والاستراحات',
+                    enabled: false,
+                    locked: false,
+                    bgColor: '#09131f',
+                    bgOpacity: 85,
+                    textColor: '#ffffff',
+                    accentColor: '#10b981',
+                    blur: true,
+                    border: true,
+                    scale: 100,
+                    padding: 12,
+                    showAlarmTitle: true,
+                    showAlarmCountdown: true,
+                    showAlarmTime: true
+                },
+                miniPrayers: {
+                    id: 'miniPrayers',
+                    name: 'جدول مواقيت الصلاة المصغر',
+                    enabled: false,
+                    locked: false,
+                    bgColor: '#09131f',
+                    bgOpacity: 85,
+                    textColor: '#ffffff',
+                    accentColor: '#10b981',
+                    blur: true,
+                    border: true,
+                    scale: 100,
+                    padding: 12
+                }
+            }
+        };
+
+        // Helper to invoke Tauri backend
+        async function invokeTauri(cmd, args = {}) {
+            if (window.__TAURI__?.core?.invoke) {
+                try {
+                    return await window.__TAURI__.core.invoke(cmd, args);
+                } catch (e) {
+                    console.warn(`Tauri invoke error [${cmd}]:`, e);
+                }
+            } else if (window.__TAURI_INTERNALS__?.invoke) {
+                try {
+                    return await window.__TAURI_INTERNALS__.invoke(cmd, args);
+                } catch (e) {
+                    console.warn(`Tauri internals invoke error [${cmd}]:`, e);
+                }
+            }
+            return null;
+        }
+
+        function getUrlWidgetId() {
+            // 1. URL hash fragment (e.g. widget.html#analogClock)
+            try {
+                if (window.location.hash) {
+                    const hId = window.location.hash.replace('#', '').trim();
+                    if (hId) return hId;
+                }
+            } catch(e) {}
+
+            // 2. Injected global variable via Tauri eval
+            if (window.__WIDGET_ID__) {
+                return window.__WIDGET_ID__;
+            }
+
+            // 3. Window label in Tauri v2 (e.g. "widget_analogClock" -> "analogClock")
+            try {
+                const curWin = window.__TAURI__?.window?.getCurrentWebviewWindow?.()
+                            || window.__TAURI__?.window?.getCurrentWindow?.();
+                if (curWin && curWin.label && curWin.label.startsWith('widget_')) {
+                    return curWin.label.replace('widget_', '');
+                }
+            } catch(e) {}
+
+            try {
+                const metaLabel = window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label;
+                if (metaLabel && metaLabel.startsWith('widget_')) {
+                    return metaLabel.replace('widget_', '');
+                }
+            } catch(e) {}
+
+            // 4. Parse full URL queries (?id= or encoded %3Fid=)
+            try {
+                const fullUrl = window.location.href || '';
+                const match = fullUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/) || fullUrl.match(/%3Fid=([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    return match[1];
+                }
+                const params = new URLSearchParams(window.location.search);
+                const qId = params.get('id');
+                if (qId) return qId;
+            } catch(e) {}
+
+            return 'analogClock';
+        }
+
+        function loadAppState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    appState = {
+                        ...DEFAULT_WIDGET_STATE,
+                        ...parsed,
+                        desktopWidgets: {
+                            ...DEFAULT_WIDGET_STATE.desktopWidgets,
+                            ...(parsed.desktopWidgets || {})
+                        },
+                        prayerTimings: {
+                            ...DEFAULT_WIDGET_STATE.prayerTimings,
+                            ...(parsed.prayerTimings || {})
+                        }
+                    };
+                    return;
+                }
+            } catch (e) {
+                console.warn('Error reading localStorage in widget', e);
+            }
+            if (!appState) {
+                appState = JSON.parse(JSON.stringify(DEFAULT_WIDGET_STATE));
+            }
+        }
+
+        function saveAppState() {
+            try {
+                if (appState) {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    let currentObj = {};
+                    if (raw) {
+                        try { currentObj = JSON.parse(raw); } catch(e){}
+                    }
+                    if (!currentObj.desktopWidgets) currentObj.desktopWidgets = {};
+                    currentObj.desktopWidgets[widgetId] = {
+                        ...(currentObj.desktopWidgets[widgetId] || {}),
+                        ...(appState.desktopWidgets?.[widgetId] || {})
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentObj));
+                }
+            } catch (e) {}
+        }
+
+        function hexToRgba(hex, opacityPercent) {
+            const cleanHex = (hex || '#0f172a').replace('#', '');
+            const r = parseInt(cleanHex.substring(0, 2), 16) || 15;
+            const g = parseInt(cleanHex.substring(2, 4), 16) || 23;
+            const b = parseInt(cleanHex.substring(4, 6), 16) || 42;
+            const alpha = Math.max(0, Math.min(100, Number(opacityPercent))) / 100;
+            return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2)})`;
+        }
+
+        function formatTime12Ar(h, m) {
+            const period = h >= 12 ? 'م' : 'ص';
+            const h12 = h % 12 || 12;
+            return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+        }
+
+        function formatDurationHMS(totalSeconds) {
+            const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+            const s = String(totalSeconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function getAdjustedPrayerTime(prayerKey) {
+            const raw = (appState?.prayerTimings && appState.prayerTimings[prayerKey]) || DEFAULT_PRAYER_TIMINGS[prayerKey] || '00:00';
+            const [hh, mm] = raw.split(':').map(Number);
+            const offset = (appState?.prayerSettings && appState.prayerSettings[prayerKey]?.offset) || 0;
+            const totalMins = (hh * 60 + mm + offset + 1440) % 1440;
+            const adjH = String(Math.floor(totalMins / 60)).padStart(2, '0');
+            const adjM = String(totalMins % 60).padStart(2, '0');
+            return `${adjH}:${adjM}`;
+        }
+
+        function getNextPrayerInfo(now) {
+            const PRAYER_META = [
+                { key: 'Fajr', name: 'الفجر' },
+                { key: 'Sunrise', name: 'الشروق' },
+                { key: 'Dhuhr', name: 'الظهر' },
+                { key: 'Asr', name: 'العصر' },
+                { key: 'Maghrib', name: 'المغرب' },
+                { key: 'Isha', name: 'العشاء' }
+            ];
+
+            const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            const list = PRAYER_META.map(p => {
+                const adj = getAdjustedPrayerTime(p.key);
+                const [h, m] = adj.split(':').map(Number);
+                return { ...p, h, m, totalSec: h * 3600 + m * 60, formatted: formatTime12Ar(h, m) };
+            });
+
+            for (let i = 0; i < list.length; i++) {
+                if (list[i].totalSec > nowTotalSec) {
+                    return {
+                        current: list[i],
+                        diffSec: list[i].totalSec - nowTotalSec
+                    };
+                }
+            }
+
+            // Next day Fajr
+            return {
+                current: list[0],
+                diffSec: list[0].totalSec + 86400 - nowTotalSec
+            };
+        }
+
+        function getNextWorkAlarmInfo(now) {
+            if (!appState || !appState.workAlarms || appState.workAlarms.length === 0) {
+                return null;
+            }
+            const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            let closest = null;
+            let minDiff = Infinity;
+
+            appState.workAlarms.forEach(alarm => {
+                if (!alarm.enabled) return;
+                const [h, m] = alarm.time.split(':').map(Number);
+                let alarmSec = h * 3600 + m * 60;
+                let diff = alarmSec - nowSec;
+                if (diff < 0) diff += 86400;
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = { ...alarm, h, m, diff, formatted: formatTime12Ar(h, m) };
+                }
+            });
+
+            return closest;
+        }
+
+        // Format dates dynamically based on user preferences (Separated Hijri & Gregorian formats)
+        function getFormattedDates(now, w) {
+            const hFormat = w?.hijriFormat || (w?.dateFormat === 'numeric' ? 'numeric' : 'text');
+            const gFormat = w?.gregorianFormat || (w?.dateFormat === 'numeric' ? 'numeric' : 'text');
+            const hijriNumeric = hFormat === 'numeric';
+            const gregNumeric = gFormat === 'numeric';
+            let hijriStr = '';
+            let gregStr = '';
+            const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            const dayName = daysAr[now.getDay()];
+
+            // Hijri Date
+            try {
+                if (hijriNumeric) {
+                    hijriStr = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+                        day: '2-digit', month: '2-digit', year: 'numeric'
+                    }).format(now);
+                } else {
+                    hijriStr = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+                        day: 'numeric', month: 'long', year: 'numeric'
+                    }).format(now);
+                }
+            } catch (e) {
+                hijriStr = (appState && appState.hijriDate) || '1448 هـ';
+            }
+
+            // Gregorian Date
+            try {
+                if (gregNumeric) {
+                    gregStr = new Intl.DateTimeFormat('ar-EG', {
+                        day: '2-digit', month: '2-digit', year: 'numeric'
+                    }).format(now);
+                } else {
+                    gregStr = new Intl.DateTimeFormat('ar-EG', {
+                        day: 'numeric', month: 'long', year: 'numeric'
+                    }).format(now);
+                }
+            } catch (e) {
+                gregStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+            }
+
+            return { dayName, hijriStr, gregStr };
+        }
+
+        // Dynamically request window resizing from Tauri based on scale and widget dimensions
+        function syncTauriWindowSize() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId] || {};
+            const scale = Math.max(0.6, Math.min(2.5, (w.scale || 100) / 100));
+
+            const baseSizes = {
+                analogClock: { w: 320, h: 350 },
+                miniPrayers: { w: 420, h: 290 },
+                clock: { w: 360, h: 230 },
+                nextPrayer: { w: 360, h: 230 },
+                workAlarm: { w: 360, h: 230 }
+            };
+
+            const base = baseSizes[widgetId] || { w: 360, h: 230 };
+            const targetW = Math.round(base.w * scale);
+            const targetH = Math.round(base.h * scale);
+
+            invokeTauri('resize_widget_window', {
+                widgetId,
+                width: targetW,
+                height: targetH
+            });
+        }
+
+        // Apply visual styling (colors, opacity, blur, scale, border, padding)
+        function applyWidgetStyling() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId] || {
+                name: widgetId === 'analogClock' ? 'الساعة التناظرية' : 'ودجت ميقات',
+                bgColor: '#0f172a',
+                bgOpacity: 80,
+                textColor: '#ffffff',
+                accentColor: '#10b981',
+                scale: 100,
+                padding: 12,
+                blur: true,
+                border: true,
+                clockStyle: 'classic',
+                smoothSweep: true,
+                locked: false
+            };
+
+            const card = document.getElementById('widgetCard');
+            if (!card) return;
+
+            // Dimensions container classes
+            if (widgetId === 'analogClock') {
+                card.style.width = '280px';
+                card.style.height = 'auto';
+            } else if (widgetId === 'miniPrayers') {
+                card.style.width = '390px';
+                card.style.height = 'auto';
+            } else {
+                card.style.width = '340px';
+                card.style.height = 'auto';
+            }
+
+            // Custom Padding Control (Hugs content closely or gives breathing room)
+            const pad = w.padding !== undefined ? w.padding : 12;
+            card.style.padding = `${pad}px`;
+
+            // Scale transform (Range expanded up to 220%+)
+            const scaleFactor = (w.scale || 100) / 100;
+            card.style.transform = `scale(${scaleFactor})`;
+            card.style.transformOrigin = 'center center';
+
+            // Text Color
+            card.style.color = w.textColor || '#ffffff';
+
+            // Border Handling: When border is false, DISAPPEAR COMPLETELY
+            if (w.border === false) {
+                card.style.border = 'none';
+                card.style.boxShadow = 'none';
+                card.style.outline = 'none';
+            } else {
+                card.style.border = `1px solid ${hexToRgba(w.accentColor, Math.max(30, w.bgOpacity))}`;
+                card.style.boxShadow = '0 12px 30px -5px rgba(0, 0, 0, 0.5)';
+            }
+
+            // Background & Blur Handling
+            if (w.bgOpacity === 0) {
+                card.style.backgroundColor = 'transparent';
+                card.classList.remove('backdrop-blur-md', 'backdrop-blur-xl', 'backdrop-blur-2xl');
+            } else {
+                card.style.backgroundColor = hexToRgba(w.bgColor, w.bgOpacity);
+                if (w.blur) {
+                    card.classList.add('backdrop-blur-md');
+                } else {
+                    card.classList.remove('backdrop-blur-md');
+                }
+            }
+
+            // Lock / Drag Status Cursor and Region
+            if (w.locked) {
+                card.classList.remove('cursor-move');
+                card.classList.add('cursor-default');
+                card.removeAttribute('data-tauri-drag-region');
+            } else {
+                card.classList.add('cursor-move');
+                card.classList.remove('cursor-default');
+                card.setAttribute('data-tauri-drag-region', '');
+            }
+
+            // Sync window size with backend
+            syncTauriWindowSize();
+        }
+
+        // ================= CONTEXT MENU CONTROLS =================
+        function openContextMenu(clientX, clientY) {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId] || {};
+            const cm = document.getElementById('widgetContextMenu');
+            if (!cm) return;
+
+            // Fill context menu values
+            document.getElementById('cmWidgetTitle').textContent = w.name || 'إعدادات الودجت';
+            document.getElementById('cmOpacityVal').textContent = `${w.bgOpacity ?? 80}%`;
+            document.getElementById('cmScaleVal').textContent = `${w.scale ?? 100}%`;
+
+            // Lock badge & icon
+            const lockIcon = document.getElementById('cmLockIcon');
+            const lockText = document.getElementById('cmLockText');
+            const lockBadge = document.getElementById('cmLockBadge');
+            if (w.locked) {
+                lockIcon.className = 'fa-solid fa-lock text-amber-400 w-4 text-center';
+                lockText.textContent = 'إلغاء تثبيت الموضع';
+                lockBadge.textContent = 'مثبت';
+                lockBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold';
+            } else {
+                lockIcon.className = 'fa-solid fa-lock-open text-slate-400 w-4 text-center';
+                lockText.textContent = 'تثبيت الموضع (قفل)';
+                lockBadge.textContent = 'حر';
+                lockBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold';
+            }
+
+            // Border badge
+            const borderBadge = document.getElementById('cmBorderBadge');
+            if (w.border !== false) {
+                borderBadge.textContent = 'مفعل';
+                borderBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold';
+            } else {
+                borderBadge.textContent = 'مخفي تماماً';
+                borderBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-bold';
+            }
+
+            // Blur badge
+            const blurBadge = document.getElementById('cmBlurBadge');
+            if (w.blur) {
+                blurBadge.textContent = 'مفعل';
+                blurBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-400 font-bold';
+            } else {
+                blurBadge.textContent = 'معطل';
+                blurBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-400 font-bold';
+            }
+
+            // Z-Order badge
+            const zBadge = document.getElementById('cmZOrderBadge');
+            if (zBadge) {
+                if (w.alwaysOnTop) {
+                    zBadge.textContent = 'في المقدمة دائماً';
+                    zBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold';
+                } else {
+                    zBadge.textContent = 'سطح المكتب (بالخلفية)';
+                    zBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold';
+                }
+            }
+
+            // Date section (for analogClock and clock)
+            const dateSection = document.getElementById('cmDateSection');
+            if (widgetId === 'analogClock' || widgetId === 'clock') {
+                dateSection.classList.remove('hidden');
+                const hijriBadge = document.getElementById('cmHijriBadge');
+                const gregBadge = document.getElementById('cmGregorianBadge');
+                const formatBadge = document.getElementById('cmDateFormatBadge');
+
+                hijriBadge.textContent = w.showHijri !== false ? 'مفعل' : 'معطل';
+                hijriBadge.className = w.showHijri !== false ? 'text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold' : 'text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-slate-400 font-bold';
+
+                gregBadge.textContent = w.showGregorian !== false ? 'مفعل' : 'معطل';
+                gregBadge.className = w.showGregorian !== false ? 'text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold' : 'text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-slate-400 font-bold';
+
+                formatBadge.textContent = w.dateFormat === 'numeric' ? 'أرقام (DD/MM/YYYY)' : 'أسماء الشهور (نصي)';
+            } else {
+                dateSection.classList.add('hidden');
+            }
+
+            // Analog clock section visibility
+            const analogSection = document.getElementById('cmAnalogClockSection');
+            if (widgetId === 'analogClock') {
+                analogSection.classList.remove('hidden');
+                const sweepBadge = document.getElementById('cmSweepBadge');
+                if (w.smoothSweep !== false) {
+                    sweepBadge.textContent = 'انسيابي';
+                    sweepBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold';
+                } else {
+                    sweepBadge.textContent = 'تكة';
+                    sweepBadge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold';
+                }
+            } else {
+                analogSection.classList.add('hidden');
+            }
+
+            // Position context menu safely within window
+            cm.classList.remove('hidden');
+            const menuWidth = 280;
+            const menuHeight = (widgetId === 'analogClock' ? 440 : (widgetId === 'clock' ? 360 : 280));
+            const posX = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, clientX));
+            const posY = Math.max(8, Math.min(window.innerHeight - menuHeight - 8, clientY));
+            cm.style.left = `${posX}px`;
+            cm.style.top = `${posY}px`;
+        }
+
+        function closeContextMenu() {
+            const cm = document.getElementById('widgetContextMenu');
+            if (cm) cm.classList.add('hidden');
+        }
+
+        function toggleLock() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.locked = !w.locked;
+            saveAppState();
+            applyWidgetStyling();
+        }
+
+        function setContextMenuOpacity(val) {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.bgOpacity = Number(val);
+            saveAppState();
+            applyWidgetStyling();
+            closeContextMenu();
+        }
+
+        function setContextMenuScale(val) {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.scale = Number(val);
+            saveAppState();
+            applyWidgetStyling();
+            closeContextMenu();
+        }
+
+        function toggleContextMenuBorder() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.border = !(w.border !== false);
+            saveAppState();
+            applyWidgetStyling();
+            closeContextMenu();
+        }
+
+        function toggleContextMenuBlur() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.blur = !w.blur;
+            saveAppState();
+            applyWidgetStyling();
+            closeContextMenu();
+        }
+
+        function toggleContextMenuAlwaysOnTop() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.alwaysOnTop = !w.alwaysOnTop;
+            saveAppState();
+            invokeTauri('set_widget_always_on_top', { widgetId, onTop: !!w.alwaysOnTop });
+            const cm = document.getElementById('widgetContextMenu');
+            if (cm && cm.style.left) {
+                openContextMenu(parseInt(cm.style.left), parseInt(cm.style.top));
+            }
+        }
+
+        function toggleContextMenuHijri() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.showHijri = !(w.showHijri !== false);
+            saveAppState();
+            renderContent();
+            openContextMenu(parseInt(document.getElementById('widgetContextMenu').style.left), parseInt(document.getElementById('widgetContextMenu').style.top));
+        }
+
+        function toggleContextMenuGregorian() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.showGregorian = !(w.showGregorian !== false);
+            saveAppState();
+            renderContent();
+            openContextMenu(parseInt(document.getElementById('widgetContextMenu').style.left), parseInt(document.getElementById('widgetContextMenu').style.top));
+        }
+
+        function toggleContextMenuDateFormat() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets[widgetId];
+            if (!w) return;
+            w.dateFormat = w.dateFormat === 'numeric' ? 'text' : 'numeric';
+            saveAppState();
+            renderContent();
+            openContextMenu(parseInt(document.getElementById('widgetContextMenu').style.left), parseInt(document.getElementById('widgetContextMenu').style.top));
+        }
+
+        function setContextMenuClockStyle(style) {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets.analogClock;
+            if (!w) return;
+            w.clockStyle = style;
+            saveAppState();
+            applyWidgetStyling();
+            renderContent();
+            closeContextMenu();
+        }
+
+        function toggleContextMenuSweep() {
+            if (!appState || !appState.desktopWidgets) return;
+            const w = appState.desktopWidgets.analogClock;
+            if (!w) return;
+            w.smoothSweep = !(w.smoothSweep !== false);
+            saveAppState();
+            applyWidgetStyling();
+            renderContent();
+            closeContextMenu();
+        }
+
+        async function openMainWindow() {
+            await invokeTauri('show_main_window');
+        }
+
+        async function closeWidget() {
+            try { document.body.style.display = 'none'; } catch(e) {}
+            if (appState && appState.desktopWidgets && appState.desktopWidgets[widgetId]) {
+                appState.desktopWidgets[widgetId].enabled = false;
+                saveAppState();
+            }
+            if (window.__TAURI__?.window?.getCurrentWindow) {
+                try {
+                    window.__TAURI__.window.getCurrentWindow().hide();
+                } catch(e) {}
+            }
+            await invokeTauri('close_widget_window', { widgetId });
+        }
+
+        // Track and save window position on drag
+        async function saveCurrentPosition() {
+            try {
+                const pos = await invokeTauri('get_widget_position', { widgetId });
+                if (pos && Array.isArray(pos)) {
+                    const [x, y] = pos;
+                    if (appState && appState.desktopWidgets && appState.desktopWidgets[widgetId]) {
+                        appState.desktopWidgets[widgetId].screenX = x;
+                        appState.desktopWidgets[widgetId].screenY = y;
+                        saveAppState();
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Render Widget Content
+        function renderContent() {
+            const now = new Date();
+            const body = document.getElementById('widgetBody');
+            if (!body) return;
+            const w = (appState && appState.desktopWidgets && appState.desktopWidgets[widgetId]) || {
+                accentColor: '#10b981',
+                textColor: '#ffffff',
+                bgColor: '#0f172a',
+                bgOpacity: 80,
+                clockStyle: 'classic',
+                smoothSweep: true,
+                showHijri: true,
+                showGregorian: true,
+                showDayName: true,
+                dateFormat: 'text',
+                hijriFontSize: 11,
+                gregorianFontSize: 10,
+                dayFontSize: 12,
+                hijriColor: '#34d399',
+                gregorianColor: '#94a3b8',
+                dayColor: '#fbbf24',
+                clockColor: '#ffffff'
+            };
+
+            const accent = w.accentColor || '#10b981';
+            const textCol = w.textColor || '#ffffff';
+            const { dayName, hijriStr, gregStr } = getFormattedDates(now, w);
+
+            if (widgetId === 'analogClock') {
+                const hours24 = now.getHours();
+                const mins = now.getMinutes();
+                const secs = now.getSeconds();
+                const ms = now.getMilliseconds();
+                const clockStyle = w.clockStyle || 'classic';
+                const smoothSweep = w.smoothSweep !== false;
+
+                const sAngle = (secs + (smoothSweep ? ms / 1000 : 0)) * 6;
+                const mAngle = (mins + secs / 60) * 6;
+                const hAngle = ((hours24 % 12) + mins / 60 + secs / 3600) * 30;
+
+                const nextP = getNextPrayerInfo(now);
+                const nextTitle = nextP.current.name;
+
+                // Center (120, 120), radius 100 inside 240x240 viewBox
+                const cx = 120, cy = 120, r = 100;
+                let ticks = '';
+                for (let i = 0; i < 60; i++) {
+                    const deg = i * 6;
+                    const rad = deg * Math.PI / 180;
+                    if (i % 5 === 0) {
+                        const isMain = i % 15 === 0;
+                        const tickLen = isMain ? 13 : 8;
+                        const x1 = cx + (r - tickLen) * Math.sin(rad);
+                        const y1 = cy - (r - tickLen) * Math.cos(rad);
+                        const x2 = cx + (r - 3) * Math.sin(rad);
+                        const y2 = cy - (r - 3) * Math.cos(rad);
+                        const col = isMain ? accent : textCol;
+                        const sw = isMain ? 2.5 : 1.5;
+                        ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" opacity="${isMain ? 0.95 : 0.6}" />`;
+                    } else if (clockStyle !== 'modern') {
+                        const x1 = cx + (r - 5) * Math.sin(rad);
+                        const y1 = cy - (r - 5) * Math.cos(rad);
+                        const x2 = cx + (r - 3) * Math.sin(rad);
+                        const y2 = cy - (r - 3) * Math.cos(rad);
+                        ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${textCol}" stroke-width="1" opacity="0.25" />`;
+                    }
+                }
+
+                let numerals = '';
+                if (clockStyle === 'arabic') {
+                    const arNums = ['١٢', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '١٠', '١١'];
+                    for (let i = 0; i < 12; i++) {
+                        const deg = i * 30;
+                        const rad = deg * Math.PI / 180;
+                        const nr = r - 22;
+                        const nx = cx + nr * Math.sin(rad);
+                        const ny = cy - nr * Math.cos(rad) + 4.5;
+                        numerals += `<text x="${nx.toFixed(1)}" y="${ny.toFixed(1)}" font-family="'Amiri', serif" font-size="12" font-weight="bold" fill="${textCol}" text-anchor="middle" opacity="0.95">${arNums[i]}</text>`;
+                    }
+                } else if (clockStyle === 'classic') {
+                    const roman = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+                    for (let i = 0; i < 12; i += 3) {
+                        const deg = i * 30;
+                        const rad = deg * Math.PI / 180;
+                        const nr = r - 22;
+                        const nx = cx + nr * Math.sin(rad);
+                        const ny = cy - nr * Math.cos(rad) + 4;
+                        numerals += `<text x="${nx.toFixed(1)}" y="${ny.toFixed(1)}" font-family="'Cairo', sans-serif" font-size="10" font-weight="extrabold" fill="${accent}" text-anchor="middle">${roman[i]}</text>`;
+                    }
+                }
+
+                let decorativeBg = '';
+                if (clockStyle === 'arabesque') {
+                    decorativeBg = `
+                        <g opacity="0.22" stroke="${accent}" stroke-width="1.2" fill="none">
+                            <rect x="85" y="85" width="70" height="70" rx="3" />
+                            <rect x="85" y="85" width="70" height="70" rx="3" transform="rotate(45 120 120)" />
+                            <circle cx="120" cy="120" r="32" stroke-dasharray="2 3" />
+                        </g>
+                    `;
+                }
+
+                // Dates footer section
+                let datesFooterHtml = '';
+                const showClock = w.showClock !== false;
+                const showHijri = w.showHijri !== false;
+                const showGreg = w.showGregorian !== false;
+                const showDay = w.showDayName !== false;
+
+                const dayCol = w.dayColor || '#fbbf24';
+                const hijriCol = w.hijriColor || '#34d399';
+                const gregCol = w.gregorianColor || '#94a3b8';
+                const daySize = w.dayFontSize || 12;
+                const hijriSize = w.hijriFontSize || 11;
+                const gregSize = w.gregorianFontSize || 10;
+
+                const dayBgStyle = w.dayBgEnabled ? `background-color: ${hexToRgba(w.dayBgColor || '#000000', w.dayBgOpacity ?? 40)}; padding: 2px 10px; border-radius: 9999px;` : '';
+                const hijriBgStyle = w.hijriBgEnabled ? `background-color: ${hexToRgba(w.hijriBgColor || '#000000', w.hijriBgOpacity ?? 40)}; padding: 2px 8px; border-radius: 8px;` : '';
+                const gregBgStyle = w.gregorianBgEnabled ? `background-color: ${hexToRgba(w.gregorianBgColor || '#000000', w.gregorianBgOpacity ?? 40)}; padding: 2px 8px; border-radius: 8px;` : '';
+
+                if (showDay || showHijri || showGreg) {
+                    datesFooterHtml = `
+                        <div class="flex flex-col items-center justify-center w-full px-2 pt-1.5 mt-1 ${showClock ? 'border-t border-white/10' : ''} text-center gap-0.5">
+                            ${showDay ? `<div class="font-extrabold" style="color: ${dayCol}; font-size: ${daySize}px; ${dayBgStyle}">${dayName}</div>` : ''}
+                            <div class="flex items-center justify-center gap-2 flex-wrap font-bold mt-0.5">
+                                ${showHijri ? `<span style="color: ${hijriCol}; font-size: ${hijriSize}px; ${hijriBgStyle}">${hijriStr}</span>` : ''}
+                                ${showHijri && showGreg ? `<span class="opacity-40 text-[9px]">•</span>` : ''}
+                                ${showGreg ? `<span style="color: ${gregCol}; font-size: ${gregSize}px; ${gregBgStyle}">${gregStr}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const clockSvgHtml = showClock ? `
+                    <div class="relative w-56 h-56">
+                        <svg viewBox="0 0 240 240" class="w-full h-full select-none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${hexToRgba(w.bgColor, Math.max(30, w.bgOpacity))}" stroke="${accent}" stroke-width="2.5" />
+                            <circle cx="${cx}" cy="${cy}" r="${r - 2}" fill="none" stroke="${accent}" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.4" />
+                            ${decorativeBg}
+                            ${ticks}
+                            ${numerals}
+                            
+                            <!-- Brand Script & Next Prayer Status -->
+                            <text x="${cx}" y="${cy - 30}" font-family="'Amiri', serif" font-size="13" font-weight="bold" fill="${accent}" text-anchor="middle">مِيـقَـات</text>
+                            <text x="${cx}" y="${cy + 36}" font-family="'Cairo', sans-serif" font-size="9" font-weight="bold" fill="${textCol}" opacity="0.85" text-anchor="middle">${nextTitle} ${nextP.current.formatted}</text>
+
+                            <!-- Hands -->
+                            <polygon points="${cx-3.5},${cy} ${cx+3.5},${cy} ${cx+1.5},${cy-50} ${cx},${cy-55} ${cx-1.5},${cy-50}" fill="${accent}" transform="rotate(${hAngle} ${cx} ${cy})" />
+                            <polygon points="${cx-2.5},${cy} ${cx+2.5},${cy} ${cx+1},${cy-72} ${cx},${cy-78} ${cx-1},${cy-72}" fill="${textCol}" transform="rotate(${mAngle} ${cx} ${cy})" />
+                            <line x1="${cx}" y1="${cy+20}" x2="${cx}" y2="${cy-82}" stroke="#f43f5e" stroke-width="1.8" stroke-linecap="round" transform="rotate(${sAngle} ${cx} ${cy})" />
+                            <circle cx="${cx}" cy="${cy}" r="4.5" fill="#f43f5e" />
+                            <circle cx="${cx}" cy="${cy}" r="1.5" fill="#ffffff" />
+                        </svg>
+                    </div>
+                ` : '';
+
+                body.innerHTML = `
+                    <div class="flex flex-col items-center justify-center desktop-glow-text w-full">
+                        ${clockSvgHtml}
+                        ${datesFooterHtml}
+                    </div>
+                `;
+            } else if (widgetId === 'clock') {
+                const hours24 = now.getHours();
+                const mins = String(now.getMinutes()).padStart(2, '0');
+                const secs = String(now.getSeconds()).padStart(2, '0');
+                const ampm = hours24 >= 12 ? 'م' : 'ص';
+                const hours12 = String(hours24 % 12 || 12).padStart(2, '0');
+
+                const showClock = w.showClock !== false;
+                const showHijri = w.showHijri !== false;
+                const showGreg = w.showGregorian !== false;
+                const showDay = w.showDayName !== false;
+
+                const dayCol = w.dayColor || '#fbbf24';
+                const hijriCol = w.hijriColor || '#34d399';
+                const gregCol = w.gregorianColor || '#94a3b8';
+                const clockCol = w.clockColor || '#ffffff';
+                const daySize = w.dayFontSize || 12;
+                const hijriSize = w.hijriFontSize || 11;
+                const gregSize = w.gregorianFontSize || 11;
+                const clockSize = w.clockFontSize || 48;
+
+                const clockBgStyle = w.clockBgEnabled ? `background-color: ${hexToRgba(w.clockBgColor || '#000000', w.clockBgOpacity ?? 40)}; padding: 4px 14px; border-radius: 14px;` : '';
+                const dayBgStyle = w.dayBgEnabled ? `background-color: ${hexToRgba(w.dayBgColor || '#000000', w.dayBgOpacity ?? 40)}; padding: 2px 10px; border-radius: 9999px;` : 'background-color: rgba(0,0,0,0.25);';
+                const hijriBgStyle = w.hijriBgEnabled ? `background-color: ${hexToRgba(w.hijriBgColor || '#000000', w.hijriBgOpacity ?? 40)}; padding: 2px 8px; border-radius: 8px;` : '';
+                const gregBgStyle = w.gregorianBgEnabled ? `background-color: ${hexToRgba(w.gregorianBgColor || '#000000', w.gregorianBgOpacity ?? 40)}; padding: 2px 8px; border-radius: 8px;` : '';
+
+                const clockDigitsHtml = showClock ? `
+                    <div data-tauri-drag-region class="inline-flex items-baseline justify-center gap-2 font-mono select-none pointer-events-none" dir="ltr" style="${clockBgStyle}">
+                        <span data-tauri-drag-region class="font-extrabold tracking-tight select-none pointer-events-none" style="color: ${clockCol}; font-size: ${clockSize}px;">${hours12}:${mins}:${secs}</span>
+                        <span data-tauri-drag-region class="text-base font-bold select-none pointer-events-none" style="color:${accent}">${ampm}</span>
+                    </div>
+                ` : '';
+
+                body.innerHTML = `
+                    <div data-tauri-drag-region class="text-center py-2 px-3 desktop-glow-text w-full select-none pointer-events-none">
+                        ${clockDigitsHtml}
+                        
+                        <!-- Dates & Day Sub-row -->
+                        <div data-tauri-drag-region class="flex flex-col items-center justify-center gap-1 mt-2 select-none pointer-events-none">
+                            ${showDay ? `<span data-tauri-drag-region class="px-2.5 py-0.5 rounded-full font-bold select-none pointer-events-none" style="color:${dayCol}; font-size: ${daySize}px; ${dayBgStyle}">${dayName}</span>` : ''}
+                            <div data-tauri-drag-region class="flex items-center justify-center gap-2 flex-wrap font-bold select-none pointer-events-none">
+                                ${showHijri ? `<span data-tauri-drag-region class="select-none pointer-events-none" style="color: ${hijriCol}; font-size: ${hijriSize}px; ${hijriBgStyle}">${hijriStr}</span>` : ''}
+                                ${showHijri && showGreg ? `<span data-tauri-drag-region class="opacity-40 text-xs select-none pointer-events-none">•</span>` : ''}
+                                ${showGreg ? `<span data-tauri-drag-region class="select-none pointer-events-none" style="color: ${gregCol}; font-size: ${gregSize}px; ${gregBgStyle}">${gregStr}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (widgetId === 'nextPrayer') {
+                const next = getNextPrayerInfo(now);
+                const title = next.current.key === 'Sunrise' ? 'الشروق' : `صلاة ${next.current.name}`;
+                const cd = formatDurationHMS(next.diffSec);
+
+                const showTitle = w.showPrayerTitle !== false;
+                const showCd = w.showPrayerCountdown !== false;
+                const showTime = w.showPrayerTime !== false;
+
+                const titleBgStyle = w.titleBgEnabled ? `background-color: ${hexToRgba(w.titleBgColor || '#000000', w.titleBgOpacity ?? 40)}; padding: 4px 10px; border-radius: 10px;` : '';
+                const cdBgStyle = w.cdBgEnabled ? `background-color: ${hexToRgba(w.cdBgColor || '#000000', w.cdBgOpacity ?? 40)}; padding: 2px 8px; border-radius: 8px;` : '';
+
+                body.innerHTML = `
+                    <div class="p-2 space-y-2.5 desktop-glow-text w-full">
+                        <div class="flex items-center justify-between">
+                            ${showTitle ? `
+                                <div class="flex items-center gap-2" style="${titleBgStyle}">
+                                    <div class="w-8 h-8 rounded-xl bg-black/25 flex items-center justify-center" style="color:${accent}">
+                                        <i class="fa-solid fa-mosque"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] opacity-75 block font-semibold">الصلاة القادمة</span>
+                                        <h3 class="text-lg font-extrabold font-amiri" style="color:${accent}">${title}</h3>
+                                    </div>
+                                </div>
+                            ` : '<div></div>'}
+                            ${showTime ? `<span class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-black/30">${next.current.formatted}</span>` : ''}
+                        </div>
+                        ${showCd ? `
+                            <div class="pt-2 border-t border-white/10 flex items-center justify-between" style="${cdBgStyle}">
+                                <span class="text-xs opacity-85 font-semibold">الوقت المتبقي للأذان:</span>
+                                <span class="font-mono text-2xl font-extrabold tracking-wider" dir="ltr" style="color:${accent}">${cd}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else if (widgetId === 'workAlarm') {
+                const closest = getNextWorkAlarmInfo(now);
+                const showTitle = w.showAlarmTitle !== false;
+                const showCd = w.showAlarmCountdown !== false;
+                const showTime = w.showAlarmTime !== false;
+
+                if (closest) {
+                    const cd = formatDurationHMS(closest.diff);
+                    body.innerHTML = `
+                        <div class="p-2 space-y-2 desktop-glow-text w-full">
+                            <div class="flex items-center gap-2">
+                                ${showTitle ? `
+                                    <div class="w-8 h-8 rounded-xl bg-black/25 flex items-center justify-center" style="color:${accent}">
+                                        <i class="fa-solid fa-briefcase"></i>
+                                    </div>
+                                    <div class="flex-1 truncate">
+                                        <span class="text-[10px] opacity-75 block font-semibold">منبه العمل القادم</span>
+                                        <h4 class="text-xs font-extrabold truncate">${closest.title}</h4>
+                                    </div>
+                                ` : '<div class="flex-1"></div>'}
+                                ${showTime ? `<span class="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-black/30">${closest.formatted}</span>` : ''}
+                            </div>
+                            ${showCd ? `
+                                <div class="pt-2 border-t border-white/10 flex items-center justify-between">
+                                    <span class="text-xs opacity-80 font-semibold">المتبقي:</span>
+                                    <span class="font-mono text-xl font-extrabold" dir="ltr" style="color:${accent}">${cd}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    body.innerHTML = `
+                        <div class="p-3 text-center opacity-75 text-xs font-bold desktop-glow-text w-full">
+                            <i class="fa-solid fa-briefcase text-lg mb-1 block" style="color:${accent}"></i>
+                            لا توجد منبهات عمل مفعلة حالياً
+                        </div>
+                    `;
+                }
+            } else if (widgetId === 'miniPrayers') {
+                const PRAYERS = [
+                    { k: 'Fajr', n: 'الفجر' },
+                    { k: 'Sunrise', n: 'الشروق' },
+                    { k: 'Dhuhr', n: 'الظهر' },
+                    { k: 'Asr', n: 'العصر' },
+                    { k: 'Maghrib', n: 'المغرب' },
+                    { k: 'Isha', n: 'العشاء' }
+                ];
+                const itemsHtml = PRAYERS.map(p => {
+                    const adj = getAdjustedPrayerTime(p.k);
+                    const [h, m] = adj.split(':').map(Number);
+                    return `
+                        <div class="text-center px-2 py-1.5 rounded-xl bg-black/25 border border-white/5">
+                            <span class="block text-[11px] font-bold" style="color:${accent}">${p.n}</span>
+                            <span class="font-mono text-xs font-bold">${formatTime12Ar(h, m)}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                body.innerHTML = `
+                    <div class="p-2 space-y-2 desktop-glow-text w-full">
+                        <div class="flex items-center justify-between text-xs font-bold pb-1 border-b border-white/10">
+                            <span>مواقيت الصلاة اليوم</span>
+                            <i class="fa-solid fa-kaaba" style="color:${accent}"></i>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5">${itemsHtml}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Animated render loop
+        let lastTickTime = 0;
+        function runLoop(timestamp) {
+            if (widgetId === 'analogClock') {
+                renderContent();
+            } else {
+                if (!lastTickTime || timestamp - lastTickTime >= 1000) {
+                    lastTickTime = timestamp;
+                    renderContent();
+                }
+            }
+            requestAnimationFrame(runLoop);
+        }
+
+        // Robust Initialization that works whether DOM is already ready or still loading
+        function initWidget() {
+            widgetId = getUrlWidgetId();
+            loadAppState();
+
+            try { document.body.style.display = 'flex'; } catch(e) {}
+            applyWidgetStyling();
+            renderContent();
+            try { syncTauriWindowSize(); } catch(e) {}
+
+            // Native Tauri Window Dragging (Smooth, Hardware-Accelerated, Zero-Lag, Never sticks to mouse)
+            const card = document.getElementById('widgetCard');
+
+            card.addEventListener('mousedown', async (e) => {
+                if (e.button !== 0) return; // Only left click
+                if (!e.target.closest('#widgetContextMenu')) {
+                    closeContextMenu();
+                }
+                if (e.target.closest('button, input, select, a, #widgetContextMenu')) return;
+
+                const curWidget = (appState && appState.desktopWidgets && appState.desktopWidgets[widgetId]);
+                if (curWidget && curWidget.locked) return; // Locked against dragging
+
+                // Start native OS drag via Tauri
+                try {
+                    const curWin = window.__TAURI__?.window?.getCurrentWebviewWindow?.()
+                                || window.__TAURI__?.window?.getCurrentWindow?.()
+                                || window.__TAURI__?.webviewWindow?.getCurrentWebviewWindow?.();
+                    if (curWin && typeof curWin.startDragging === 'function') {
+                        await curWin.startDragging();
+                        return;
+                    }
+                } catch(err) {}
+                invokeTauri('drag_widget_window');
+            });
+
+            // Save screen coordinates upon releasing the mouse
+            window.addEventListener('mouseup', () => {
+                saveCurrentPosition();
+                const curW = (appState && appState.desktopWidgets && appState.desktopWidgets[widgetId]);
+                if (curW && !curW.alwaysOnTop) {
+                    invokeTauri('set_widget_always_on_bottom', { widgetId, bottom: true });
+                }
+            });
+
+            // Right-Click Event for Professional Context Menu
+            window.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                openContextMenu(e.clientX, e.clientY);
+            });
+
+            // Start animated loop
+            requestAnimationFrame(runLoop);
+
+            // Periodically save screen position
+            setInterval(saveCurrentPosition, 3000);
+
+            // Listen to storage events from main window
+            window.addEventListener('storage', (e) => {
+                if (e.key === STORAGE_KEY) {
+                    loadAppState();
+                    widgetId = getUrlWidgetId();
+                    const updatedWidget = (appState && appState.desktopWidgets && appState.desktopWidgets[widgetId]);
+                    if (updatedWidget && updatedWidget.enabled === false) {
+                        try { document.body.style.display = 'none'; } catch(err) {}
+                        if (window.__TAURI__?.window?.getCurrentWindow) {
+                            try { window.__TAURI__.window.getCurrentWindow().hide(); } catch(err) {}
+                        }
+                        return;
+                    }
+                    try { document.body.style.display = 'flex'; } catch(err) {}
+                    applyWidgetStyling();
+                    renderContent();
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initWidget);
+        } else {
+            initWidget();
+        }
+    </script>
+</body>
+</html>
