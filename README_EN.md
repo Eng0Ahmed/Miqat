@@ -1,102 +1,128 @@
-# 🕌 Miqat (ميقات) v2.0
+# 🕌 Miqat (ميقات) v2.0 Pro
 > **Desktop Prayer Times & Smart Productivity Alarm for Windows 10 & 11**
-> 
-> A modern, lightweight desktop app built with **Tauri v2** and **Rust**, featuring an acrylic glassmorphism user interface designed with modern web technologies.
+>
+> A state-of-the-art native desktop companion built with **Tauri v2** and **Rust 2024**, featuring an ultra-fast backend engine and an elegant acrylic glassmorphism user interface designed with **Tailwind CSS**.
 
 ---
 
-![Miqat Header Banner](assets/github/banner.png)
+## 🌟 Comprehensive Master Overview
+
+![Miqat Master Overview Infographic](assets/overview.png)
 
 ---
 
-## 📽️ Animated Showcase Preview
+## ✨ Key Features & Capabilities
 
-![Miqat Animated Showcase](assets/github/miqat-showcase.gif)
+### 1. 🕋 Official Prayer Times & Automated Adhan for 22 Arab Countries
+- Astronomical calculation verified across **22 Arab and Islamic nations** (Egyptian General Authority of Survey, Umm Al-Qura Makkah, Dubai, Qatar, Diyanet Turkey, Muslim World League, and more).
+- Real-time countdown timer and precision progress bar for the upcoming prayer.
+- Pre-prayer ablution (Wudu) reminder (5 to 30 minutes in advance).
+- Manual minute-by-minute fine-tuning adjustments (+/-) and integrated Qibla compass.
 
-> 🎥 **Full HD Showcase Video (1080p):** Download or preview the video walkthrough here: [assets/github/miqat-showcase.mp4](assets/github/miqat-showcase.mp4).
+### 2. 💼 Work Alarms, Pomodoro Productivity & Quick Break Timer
+- Comprehensive scheduling for work start, energy boost break, and shift completion.
+- One-click Quick Break timer (10, 15, 30, and 60 minutes) to prevent digital eye strain and maintain physical wellness.
+- Expanded interactive alarms table fully integrated into the main dashboard.
+
+### 3. 🪟 Acrylic Glassmorphic Desktop Popups
+- Smart glassmorphic notification floating gracefully above the Windows taskbar in the bottom-right corner.
+- Synchronized **Live Audio Equalizer** reacting dynamically in real time during Adhan playback.
+- Quick action controls: Mute audio, 5-minute snooze, and view the post-Adhan supplication.
+- Contextual layouts tailored specifically for: Adhan alerts, work tasks, and pre-prayer reminders.
+
+### 4. 🕒 Transparent Desktop Floating Widgets
+- Detached, free-floating analog and digital desktop clocks with authentic glassmorphism transparency.
+- Full **Free Drag & Drop** functionality across multiple monitors or lock-in-place mode.
+- Live display of current time, Hijri and Gregorian dates, and next prayer countdown.
+
+### 5. 🎙️ Audio Studio, Digital Tasbeeh & Prophetic Azkar
+- Curated audio library with 6 complete Adhans from Makkah, Madinah, Al-Aqsa, Abdulbasit, Al-Afasy, and Al-Qatami.
+- High-fidelity prophetic recitations (Post-Adhan Dua, Ayat Al-Kursi, Baqarah Endings, Yunus Dua, Rabbana Atina).
+- Smart interactive digital Tasbeeh counter with bead haptics and goal targets (33 / 100).
+- Authentic post-prayer supplications formatted for comfortable reading.
+
+### 6. ⚡ Smart Auto-Updates & Ultra-Lightweight Rust Performance
+- Automatic check for new versions via **GitHub Releases** with one-click in-app updater.
+- Ultra-low system memory footprint (< 40MB RAM) powered by the Rust backend engine.
+- Silent minimize-to-tray and seamless Windows startup integration.
 
 ---
 
-## ✨ Key Features
+## 📸 Authentic Screenshots Gallery
 
-### 1. Accurate Prayer Times & Automated Adhan
-- Covers **22 Arab countries** and global coordinates with automatic or manual GPS detection.
-- **Daylight Saving Time (DST)** quick toggle.
-- Real-time countdown clock and percentage-based progress bar.
-- Pre-prayer preparation reminders (5 to 30 minutes before Adhan).
-- Post-prayer supplications window and built-in interactive digital tasbeeh counter.
-
-### 2. Work & Productivity Alarms
-- Unlimited daily schedules for work start, lunch break, and end of shift.
-- Quick Pomodoro / Break timer with presets for 10, 15, 30, and 60 minutes.
-- Smart bottom status bar showing active alarms and closest countdown with quick toggle-all controls.
-
-### 3. Acrylic Desktop Popup Notification
-- Elegant glassmorphic popup floating above the Windows taskbar clock.
-- Real-time audio waveform equalizer synchronized during sound playback.
-- Instant actions: Stop Audio, Play Supplication, or Snooze for 5 minutes.
-- 6 customizable display positions across the screen with scale and opacity controls.
-
-![Desktop Popup Notification](assets/github/popup-equalizer-live.gif)
-
-### 4. Transparent Desktop Floating Widgets
-- Detached, free-floating analog and digital clocks with Arabic and classical dials.
-- Drag-and-drop placement with position lock.
-- Automatic persistence of positions, scales, and colors across reboots.
-
----
-
-## 📸 Screenshots Gallery
-
-| Dark Mode Dashboard | Light Mode Dashboard |
+### 1. Floating Desktop Widgets
+| Full Windows Desktop with Transparent Floating Clocks | Closeup of Digital Clock & Next Prayer Countdown |
 | :---: | :---: |
-| ![Dark Dashboard](assets/github/dashboard-dark.png) | ![Light Dashboard](assets/github/dashboard-light.png) |
-
-| Transparent Desktop Widgets | Audio Studio & Supplications |
-| :---: | :---: |
-| ![Desktop Widgets](assets/github/desktop-widgets.png) | ![Audio Studio](assets/github/audio-studio.png) |
-
-| Taskbar Popup Notification | Country & Method Settings |
-| :---: | :---: |
-| ![Desktop Popup](assets/github/popup-desktop-view.png) | ![Settings Location](assets/github/settings-location.png) |
+| ![Desktop Widgets Live](assets/screenshots/01_desktop_widgets_live.png) | ![Digital Clock Widget](assets/screenshots/02_desktop_clock_widget.png) |
 
 ---
 
-## 🛠️ Tech Stack
+### 2. Smart Acrylic Taskbar Popups
+| Adhan Popup with Live Waveform Equalizer | Work & Task Productivity Alarm | Pre-Prayer Ablution Reminder |
+| :---: | :---: | :---: |
+| ![Adhan Acrylic Popup](assets/screenshots/04_popup_adhan_equalizer.png) | ![Work Alarm Popup](assets/screenshots/05_popup_work_alarm.png) | ![Pre-Prayer Reminder](assets/screenshots/06_popup_pre_reminder.png) |
 
-- **Backend:** Rust 2024, Tauri v2
-- **Frontend:** HTML5, Tailwind CSS, Vanilla JavaScript
-- **Audio:** Web Audio API & Native Media Playback
-- **Storage:** LocalStorage & IndexedDB (Offline-first architecture)
-- **OS Support:** Windows 10 / Windows 11 (64-bit)
+---
+
+### 3. Adhan Ringing Modal & Spiritual Tools
+| Main Adhan Ringing Modal | Smart Interactive Digital Tasbeeh | Authentic Post-Prayer Azkar List |
+| :---: | :---: | :---: |
+| ![Adhan Ringing Alert](assets/screenshots/03_adhan_ringing_modal.png) | ![Digital Tasbeeh Counter](assets/screenshots/07_tasbeeh_counter_modal.png) | ![Post-Prayer Azkar](assets/screenshots/08_post_prayer_azkar.png) |
+
+---
+
+### 4. Settings & Customization Studio
+| Location, 22 Arab Countries & Calculation Methods | Audio Studio, Adhan & Supplication Catalog |
+| :---: | :---: |
+| ![Settings Location & Countries](assets/screenshots/09_settings_location_countries.png) | ![Audio Studio](assets/screenshots/10_settings_audio_studio.png) |
+
+| Themes, Mosque Wallpapers & Glass Opacity | Desktop Widgets Album & Pinning Options |
+| :---: | :---: |
+| ![Themes & Wallpapers](assets/screenshots/11_settings_themes_backgrounds.png) | ![Widgets Album Settings](assets/screenshots/12_settings_widgets_album.png) |
+
+---
+
+## 🛠️ Technical Architecture & Tech Stack
+
+- **Backend Engine:** Rust 2024 / Tauri v2 Native Desktop Framework
+- **Frontend Layer:** Tailwind CSS 3.4 & High-Performance Vanilla JavaScript
+- **Audio Processing:** Web Audio API with real-time spectrum analysis
+- **Native Windows Shell:** Windows Acrylic Blur effect, Single Instance Lock, and Global System Hotkeys
+- **Data Persistence:** LocalStorage & IndexedDB (100% Offline-First)
+- **Supported Platforms:** Windows 10 & Windows 11 (64-bit architectures)
 
 ---
 
 ## 🚀 Getting Started
 
 ### Portable Executable
-Run `Miqat.exe` directly without any installation needed.
+Download and launch `Miqat.exe` directly without any installation required.
 
 ### Build from Source
-1. Make sure **Rust** and **Node.js** are installed.
+1. Ensure **Node.js** (v18+) and **Rust** (v1.75+) are installed.
 2. Install dependencies:
    ```bash
    npm install
    ```
-3. Run development mode:
+3. Run in local development mode:
    ```bash
    npm run tauri dev
    ```
-4. Build release executable:
+4. Build the release binary:
    ```bash
    npm run tauri build
    ```
 
 ---
 
-## 👨‍💻 Author & Contact
+## 👨‍💻 Author & Contact Details
 
-- **Developer:** Eng. Ahmed Abdelaziz
+- **Lead Designer & Developer:** Eng. Ahmed Abdelaziz (**Eng_Ahmed Abdelaziz**)
+- **Title:** Software Engineer & Desktop Systems Specialist
 - **Phone / WhatsApp:** `+20 1024735044`
 - **Email:** `eng.ahmed.abdelaziz.2022@gmail.com`
-- **License:** Open source for personal and community development.
+- **GitHub Repository:** [https://github.com/Eng0Ahmed/Miqat](https://github.com/Eng0Ahmed/Miqat)
+
+---
+
+> **Copyright Notice:** Developed and designed by Eng_Ahmed Abdelaziz © 2026. All rights reserved. Open-source and freely distributed for the benefit of users worldwide.
